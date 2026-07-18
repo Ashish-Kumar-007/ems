@@ -66,11 +66,15 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// 404 handler
-app.use((_req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
+    debug: {
+      url: req.url,
+      originalUrl: req.originalUrl,
+      path: req.path
+    }
   });
 });
 
