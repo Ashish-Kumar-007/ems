@@ -11,8 +11,10 @@ import {
 } from '@/lib/utils';
 import {
   Search, Plus, Upload, Filter, ChevronLeft, ChevronRight,
-  ArrowUpDown, Eye, Pencil, Trash2, X, Users,
+  ArrowUpDown, X, Users,
 } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { EmployeeRow } from './EmployeeRow';
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function EmployeesPage() {
 
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [department, setDepartment] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
@@ -42,7 +45,7 @@ export default function EmployeesPage() {
     setLoading(true);
     try {
       const params: Record<string, any> = { page, limit, sortBy, sortOrder };
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (department) params.department = department;
       if (role) params.role = role;
       if (status) params.status = status;
@@ -55,7 +58,7 @@ export default function EmployeesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sortBy, sortOrder, search, department, role, status]);
+  }, [page, limit, sortBy, sortOrder, debouncedSearch, department, role, status]);
 
   useEffect(() => {
     fetchEmployees();
@@ -65,13 +68,10 @@ export default function EmployeesPage() {
     departmentApi.getAll().then((res) => setDepartments(res.data.data)).catch(console.error);
   }, []);
 
-  // Debounced search
+  // Reset to page 1 when search changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -83,7 +83,7 @@ export default function EmployeesPage() {
     setPage(1);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Are you sure you want to delete this employee?')) return;
     try {
       await employeeApi.delete(id);
@@ -91,7 +91,7 @@ export default function EmployeesPage() {
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to delete employee');
     }
-  };
+  }, [fetchEmployees]);
 
   const handleImport = async () => {
     if (!importFile) return;
@@ -260,72 +260,14 @@ export default function EmployeesPage() {
                 </tr>
               ) : (
                 employees.map((emp, index) => (
-                  <tr
+                  <EmployeeRow
                     key={emp.id}
-                    className="table-row cursor-pointer animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => router.push(`/employees/${emp.id}`)}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                          {getInitials(emp.firstName, emp.lastName)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {emp.firstName} {emp.lastName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{emp.user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <span className="text-sm text-foreground">{emp.department.name}</span>
-                      <p className="text-xs text-muted-foreground">{emp.designation}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-muted-foreground">{formatDate(emp.joiningDate)}</span>
-                    </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      <span className={cn('badge', getRoleBadgeClass(emp.user.role))}>
-                        {getRoleDisplayName(emp.user.role)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn('badge', getStatusBadgeClass(emp.status))}>
-                        {emp.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => router.push(`/employees/${emp.id}`)}
-                          className="btn-ghost p-2 rounded-lg"
-                          title="View"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {canCreate && (
-                          <button
-                            onClick={() => router.push(`/employees/${emp.id}/edit`)}
-                            className="btn-ghost p-2 rounded-lg"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => handleDelete(emp.id)}
-                            className="btn-ghost p-2 rounded-lg text-destructive hover:bg-destructive/10"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                    emp={emp}
+                    index={index}
+                    canCreate={canCreate}
+                    canDelete={canDelete}
+                    onDelete={handleDelete}
+                  />
                 ))
               )}
             </tbody>

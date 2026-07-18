@@ -5,10 +5,10 @@ import { dashboardApi } from '@/lib/api';
 import { DashboardStats, Employee } from '@/types';
 import { formatDate, formatCurrency, getInitials, getRoleBadgeClass, getRoleDisplayName, cn } from '@/lib/utils';
 import { Users, UserCheck, UserX, Building2, TrendingUp, ArrowUpRight } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
-} from 'recharts';
+import dynamic from 'next/dynamic';
+
+// Dynamically import charts so recharts doesn't block initial JS bundle
+const DashboardCharts = dynamic(() => import('./DashboardCharts'), { ssr: false });
 
 const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8'];
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
@@ -119,110 +119,11 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department Distribution Pie Chart */}
-        <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
-          <h3 className="text-lg font-semibold text-foreground mb-4">Department Distribution</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.departmentDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="count"
-                  nameKey="name"
-                >
-                  {stats.departmentDistribution.map((_, index) => (
-                    <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: '12px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Charts */}
+      <DashboardCharts stats={stats} />
 
-        {/* Role Distribution */}
-        <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '500ms' }}>
-          <h3 className="text-lg font-semibold text-foreground mb-4">Role Distribution</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.roleDistribution.map(r => ({
-                name: getRoleDisplayName(r.role),
-                count: r.count,
-              }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px',
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  fill="#6366f1"
-                  radius={[8, 8, 0, 0]}
-                  maxBarSize={60}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Monthly Trend + Recent Joiners */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Join Trend */}
-        <div className="lg:col-span-2 glass-card p-6 animate-fade-in" style={{ animationDelay: '600ms' }}>
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            <TrendingUp className="w-5 h-5 inline mr-2 text-primary" />
-            Monthly Joining Trend
-          </h3>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.monthlyJoinTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px',
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  fill="#8b5cf6"
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={50}
-                  name="New Joiners"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Recent Joiners */}
-        <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '700ms' }}>
+      {/* Recent Joiners */}
+      <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '700ms' }}>
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Joiners</h3>
           <div className="space-y-4">
             {stats.recentJoiners.map((emp) => (
@@ -244,7 +145,6 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
       </div>
     </div>
   );
