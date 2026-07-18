@@ -23,7 +23,7 @@ export const logger = winston.createLogger({
     new winston.transports.Console({
       format: combine(colorize(), logFormat),
     }),
-    ...(config.env !== 'production' ? [
+    ...(config.env !== 'production' && process.env.VERCEL !== '1' ? [
       new winston.transports.File({
         filename: 'logs/error.log',
         level: 'error',
