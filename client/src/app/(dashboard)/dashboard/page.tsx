@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { DashboardStats, Employee } from '@/types';
 import { formatDate, formatCurrency, getInitials, getRoleBadgeClass, getRoleDisplayName, cn } from '@/lib/utils';
@@ -14,23 +15,12 @@ const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8'];
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: response, isLoading: loading } = useQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: () => dashboardApi.getStats(),
+  });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await dashboardApi.getStats();
-        setStats(response.data.data);
-      } catch (error) {
-        console.error('Failed to fetch dashboard stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const stats: DashboardStats | null = response?.data?.data || null;
 
   if (loading) {
     return (

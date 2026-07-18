@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { orgApi } from '@/lib/api';
 import { OrgTreeNode } from '@/types';
@@ -11,25 +12,15 @@ import { OrgTreeNode as OrgTreeNodeComponent } from './OrgTreeNode';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export default function OrganizationPage() {
-  const [tree, setTree] = useState<OrgTreeNode[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  useEffect(() => {
-    const fetchTree = async () => {
-      try {
-        const response = await orgApi.getTree();
-        setTree(response.data.data);
-      } catch (error) {
-        console.error('Failed to fetch org tree:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: response, isLoading: loading } = useQuery({
+    queryKey: ['orgTree'],
+    queryFn: () => orgApi.getTree(),
+  });
 
-    fetchTree();
-  }, []);
+  const tree: OrgTreeNode[] = response?.data?.data || [];
 
   const totalNodes = (nodes: OrgTreeNode[]): number =>
     nodes.reduce((sum, n) => sum + 1 + totalNodes(n.children), 0);

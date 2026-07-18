@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { employeeApi } from '@/lib/api';
 import { Employee } from '@/types';
 import { useAuth } from '@/providers/AuthProvider';
@@ -18,47 +19,40 @@ export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [reportees, setReportees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const id = params.id as string;
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [empRes] = await Promise.all([
-          employeeApi.getById(id),
-        ]);
-        setEmployee(empRes.data.data);
+  const { data: empResponse, isLoading: loadingEmployee } = useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => employeeApi.getById(id),
+  });
 
-        // Fetch reportees if admin/HR
-        if (user?.role !== 'EMPLOYEE') {
-          try {
-            const reporteesRes = await employeeApi.getReportees(id);
-            setReportees(reporteesRes.data.data);
-          } catch {
-            // May not have permission
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch employee:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const employee: Employee | null = empResponse?.data?.data || null;
 
-    fetchData();
-  }, [id, user?.role]);
+  const { data: reporteesResponse, isLoading: loadingReportees } = useQuery({
+    queryKey: ['reportees', id],
+    queryFn: () => employeeApi.getReportees(id),
+    enabled: user?.role !== 'EMPLOYEE' && !!employee, // Only fetch if not a normal employee
+  });
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
-    try {
-      await employeeApi.delete(id);
+  const reportees: Employee[] = reporteesResponse?.data?.data || [];
+  const loading = loadingEmployee;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => employeeApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
       router.push('/employees');
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to delete');
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to delete employee');
     }
+  });
+
+  const handleDelete = () => {
+    if (!confirm('Are you sure you want to delete this employee?')) return;
+    deleteMutation.mutate(id);
   };
 
   if (loading) {

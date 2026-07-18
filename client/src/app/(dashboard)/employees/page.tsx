@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { employeeApi, departmentApi } from '@/lib/api';
 import { Employee, Department, PaginationInfo } from '@/types';
@@ -19,12 +20,9 @@ import { EmployeeRow } from './EmployeeRow';
 export default function EmployeesPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Filters
+  // Filters and pagination state
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [department, setDepartment] = useState('');
@@ -36,40 +34,35 @@ export default function EmployeesPage() {
   const [limit] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
 
-  // CSV import
+  // CSV import state
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
 
-  const fetchEmployees = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: deptResponse } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => departmentApi.getAll(),
+  });
+
+  const departments: Department[] = deptResponse?.data?.data || [];
+
+  const { data: empResponse, isLoading: loading } = useQuery({
+    queryKey: ['employees', { page, limit, search: debouncedSearch, department, role, status, sortBy, sortOrder }],
+    queryFn: () => {
       const params: Record<string, any> = { page, limit, sortBy, sortOrder };
       if (debouncedSearch) params.search = debouncedSearch;
       if (department) params.department = department;
       if (role) params.role = role;
       if (status) params.status = status;
-
-      const response = await employeeApi.getAll(params);
-      setEmployees(response.data.data);
-      setPagination(response.data.pagination);
-    } catch (error) {
-      console.error('Failed to fetch employees:', error);
-    } finally {
-      setLoading(false);
+      return employeeApi.getAll(params);
     }
-  }, [page, limit, sortBy, sortOrder, debouncedSearch, department, role, status]);
+  });
 
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
-
-  useEffect(() => {
-    departmentApi.getAll().then((res) => setDepartments(res.data.data)).catch(console.error);
-  }, []);
+  const employees: Employee[] = empResponse?.data?.data || [];
+  const pagination: PaginationInfo | null = empResponse?.data?.pagination || null;
 
   // Reset to page 1 when search changes
-  useEffect(() => {
+  React.useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
 
@@ -83,30 +76,38 @@ export default function EmployeesPage() {
     setPage(1);
   };
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
-    try {
-      await employeeApi.delete(id);
-      fetchEmployees();
-    } catch (error: any) {
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => employeeApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+    onError: (error: any) => {
       alert(error.response?.data?.message || 'Failed to delete employee');
     }
-  }, [fetchEmployees]);
+  });
 
-  const handleImport = async () => {
-    if (!importFile) return;
-    setImporting(true);
-    try {
-      const response = await employeeApi.importCsv(importFile);
+  const handleDelete = (id: string) => {
+    if (!confirm('Are you sure you want to delete this employee?')) return;
+    deleteMutation.mutate(id);
+  };
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => employeeApi.importCsv(file),
+    onSuccess: (response) => {
       alert(`${response.data.data.created} employees imported successfully`);
       setShowImportModal(false);
       setImportFile(null);
-      fetchEmployees();
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    },
+    onError: (error: any) => {
       alert(error.response?.data?.message || 'Import failed');
-    } finally {
-      setImporting(false);
     }
+  });
+
+  const handleImport = async () => {
+    if (!importFile) return;
+    importMutation.mutate(importFile);
   };
 
   const clearFilters = () => {
