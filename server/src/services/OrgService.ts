@@ -98,7 +98,7 @@ export class OrgService implements IOrgService {
     }
 
     const updated = await employeeRepository.update(employeeId, {
-      managerId: managerId,
+      manager: managerId ? { connect: { id: managerId } } : { disconnect: true },
     });
 
     // Create audit log
@@ -145,12 +145,12 @@ export class OrgService implements IOrgService {
       visited.add(current);
 
       // Walk up to the next manager
-      const emp = await prisma.employee.findUnique({
+      const empRecord: { managerId: string | null } | null = await prisma.employee.findUnique({
         where: { id: current },
         select: { managerId: true },
       });
 
-      current = emp?.managerId || null;
+      current = empRecord?.managerId || null;
     }
 
     return false;

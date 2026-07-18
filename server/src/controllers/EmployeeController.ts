@@ -31,7 +31,7 @@ export class EmployeeController {
    */
   async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const employee = await employeeService.findById(id);
 
       if (!employee) {
@@ -77,7 +77,7 @@ export class EmployeeController {
    */
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       // Verify employee exists and check permissions
       const existing = await employeeService.findById(id);
@@ -124,7 +124,7 @@ export class EmployeeController {
    */
   async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await employeeService.softDelete(id, req.user!.userId);
 
       res.status(200).json({
@@ -182,7 +182,7 @@ export class EmployeeController {
       }
 
       const imageUrl = await employeeService.uploadAvatar(
-        req.params.id,
+        req.params.id as string,
         req.file.buffer,
         req.user!.userId
       );

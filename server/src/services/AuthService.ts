@@ -119,7 +119,7 @@ export class AuthService implements IAuthService {
     };
 
     const accessToken = jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
+      expiresIn: config.jwt.expiresIn as any,
     });
 
     const refreshTokenValue = uuidv4();

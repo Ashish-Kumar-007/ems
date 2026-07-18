@@ -26,7 +26,7 @@ export class OrgController {
    */
   async getReportees(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const reportees = await orgService.getReportees(id);
 
       res.status(200).json({
@@ -43,7 +43,7 @@ export class OrgController {
    */
   async assignManager(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { managerId } = req.body;
 
       const employee = await orgService.assignManager(id, managerId, req.user!.userId);
