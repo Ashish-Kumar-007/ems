@@ -94,7 +94,12 @@ export default function EmployeesPage() {
   const importMutation = useMutation({
     mutationFn: (file: File) => employeeApi.importCsv(file),
     onSuccess: (response) => {
-      alert(`${response.data.data.created} employees imported successfully`);
+      const { created, errors, totalRows } = response.data.data;
+      if (errors && errors.length > 0) {
+        alert(`${created} employees imported successfully. ${errors.length} rows failed validation (e.g. Row ${errors[0].row}: ${errors[0].message}).`);
+      } else {
+        alert(`${created} employees imported successfully out of ${totalRows} total rows.`);
+      }
       setShowImportModal(false);
       setImportFile(null);
       queryClient.invalidateQueries({ queryKey: ['employees'] });

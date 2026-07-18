@@ -1,0 +1,6 @@
+firstName,lastName,email,phone,department,designation,salary,joiningDate,status
+Alice,Smith,alice.smith@example.com,5551230101,Engineering,Frontend Developer,95000,2023-01-15,ACTIVE
+Bob,Johnson,bob.johnson@example.com,5551230102,Engineering,Backend Developer,105000,2023-02-01,ACTIVE
+Charlie,Davis,charlie.davis@example.com,5551230103,Design,UI/UX Designer,85000,2023-03-10,ACTIVE
+Diana,Prince,diana.prince@example.com,5551230104,Human Resources,HR Specialist,75000,2022-11-20,ACTIVE
+Evan,Wright,evan.wright@example.com,5551230105,Sales,Sales Representative,65000,2023-05-01,ACTIVE
