@@ -176,3 +176,6 @@
 2026-07-18 21:47:15 [info]: 🚀 EMS Server running on http://localhost:5000
 2026-07-18 21:47:15 [info]: 📝 Environment: development
 2026-07-18 21:47:55 [info]: SIGINT received. Shutting down gracefully...
+2026-07-18 22:59:44 [info]: Prisma client initialized
+2026-07-18 22:59:45 [info]: 🚀 EMS Server running on http://localhost:5000
+2026-07-18 22:59:45 [info]: 📝 Environment: development

@@ -6,17 +6,21 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {
-      if (isAuthenticated) {
-        router.push('/dashboard');
+      if (isAuthenticated && user) {
+        if (user.role === 'EMPLOYEE') {
+          router.push('/profile');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         router.push('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

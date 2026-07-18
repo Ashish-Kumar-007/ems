@@ -53,6 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Employee data might not be available
     }
+
+    return userData;
   }, []);
 
   const logout = useCallback(async () => {
