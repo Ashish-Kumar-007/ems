@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { DashboardStats, Employee } from '@/types';
 import { formatDate, formatCurrency, getInitials, getRoleBadgeClass, getRoleDisplayName, cn } from '@/lib/utils';
-import { Users, UserCheck, UserX, Building2, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Users, UserCheck, UserX, Building2, TrendingUp, ArrowUpRight, UserCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/providers/AuthProvider';
+import Link from 'next/link';
 
 // Dynamically import charts so recharts doesn't block initial JS bundle
 const DashboardCharts = dynamic(() => import('./DashboardCharts'), { ssr: false });
@@ -15,14 +17,18 @@ const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8'];
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
 
 export default function DashboardPage() {
+  const { user, employee: currentEmployee } = useAuth();
+  const isEmployee = user?.role === 'EMPLOYEE';
+
   const { data: response, isLoading: loading } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: () => dashboardApi.getStats(),
+    enabled: !isEmployee,
   });
 
   const stats: DashboardStats | null = response?.data?.data || null;
 
-  if (loading) {
+  if (loading && !isEmployee) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -34,6 +40,32 @@ export default function DashboardPage() {
           {[...Array(2)].map((_, i) => (
             <div key={i} className="h-80 rounded-2xl bg-muted animate-pulse" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmployee) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto mt-8">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-sm">
+          <div className="w-20 h-20 mx-auto bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6">
+            <UserCircle className="w-10 h-10" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-3">
+            Welcome back{currentEmployee?.firstName ? `, ${currentEmployee.firstName}` : ''}!
+          </h1>
+          <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto">
+            You're currently logged into the Employee Portal. Here you can view your personal profile, organization tree, and interact with your team.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/profile" className="btn-primary">
+              View My Profile
+            </Link>
+            <Link href="/organization" className="btn-secondary">
+              View Org Tree
+            </Link>
+          </div>
         </div>
       </div>
     );
