@@ -89,4 +89,7 @@ export interface IEmployeeService {
 
   /** Import employees from CSV buffer */
   importCsv(buffer: Buffer, performedByUserId: string): Promise<CsvParseResult & { created: number }>;
+
+  /** Upload and set an employee's avatar */
+  uploadAvatar(id: string, buffer: Buffer, performedByUserId: string): Promise<string>;
 }

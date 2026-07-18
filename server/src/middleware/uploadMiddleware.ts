@@ -9,16 +9,8 @@ import { BadRequestError } from '../utils/AppError';
  * Handles profile image and CSV file uploads.
  */
 
-// Storage configuration for profile images
-const imageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, path.resolve(config.upload.dir, 'profiles'));
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
+// Storage configuration for profile images (Memory storage for Cloudinary)
+const imageStorage = multer.memoryStorage();
 
 // File filter for images
 const imageFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {

@@ -58,6 +58,13 @@ router.delete(
   (req, res, next) => employeeController.delete(req, res, next)
 );
 
+// POST /api/employees/:id/avatar - Upload profile image
+router.post(
+  '/:id/avatar',
+  uploadProfileImage,
+  (req, res, next) => employeeController.uploadAvatar(req, res, next)
+);
+
 // GET /api/employees/:id/reportees
 router.get(
   '/:id/reportees',

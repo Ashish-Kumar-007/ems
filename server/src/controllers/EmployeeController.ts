@@ -167,6 +167,37 @@ export class EmployeeController {
       next(error);
     }
   }
+
+  /**
+   * POST /api/employees/:id/avatar
+   */
+  async uploadAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'Profile image is required',
+        });
+        return;
+      }
+
+      const imageUrl = await employeeService.uploadAvatar(
+        req.params.id,
+        req.file.buffer,
+        req.user!.userId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Avatar uploaded successfully',
+        data: {
+          profileImage: imageUrl,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const employeeController = new EmployeeController();

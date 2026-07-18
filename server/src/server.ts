@@ -5,23 +5,24 @@ import Database from './config/database';
 import fs from 'fs';
 import path from 'path';
 
-// Ensure upload directories exist
-const uploadDirs = [
-  path.resolve(config.upload.dir),
-  path.resolve(config.upload.dir, 'profiles'),
-];
+// Ensure upload and log directories exist locally
+if (config.env === 'development') {
+  const uploadDirs = [
+    path.resolve(config.upload.dir),
+    path.resolve(config.upload.dir, 'profiles'),
+  ];
 
-uploadDirs.forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    logger.info(`Created upload directory: ${dir}`);
+  uploadDirs.forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      logger.info(`Created upload directory: ${dir}`);
+    }
+  });
+
+  const logDir = path.resolve('logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
   }
-});
-
-// Ensure log directory exists
-const logDir = path.resolve('logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
 }
 
 // Start server

@@ -18,7 +18,7 @@ import {
 } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { parseCsvBuffer, CsvParseResult } from '../utils/csvParser';
-
+import { uploadBufferToCloudinary } from '../utils/cloudinary';
 /**
  * EmployeeService: Business logic for employee management.
  *
@@ -322,6 +322,25 @@ export class EmployeeService implements IEmployeeService {
 
     logger.info(`CSV import: ${created}/${parseResult.totalRows} employees created`);
     return { ...parseResult, created };
+  }
+
+  /**
+   * Upload and set an employee's avatar
+   */
+  async uploadAvatar(id: string, buffer: Buffer, performedByUserId: string): Promise<string> {
+    const employee = await this.findById(id);
+    if (!employee) {
+      throw new NotFoundError('Employee not found');
+    }
+
+    // Upload to Cloudinary
+    const imageUrl = await uploadBufferToCloudinary(buffer);
+
+    // Update employee record
+    await employeeRepository.update(id, { profileImage: imageUrl });
+    logger.info(`Avatar uploaded for employee ${id} by user ${performedByUserId}`);
+
+    return imageUrl;
   }
 }
 
