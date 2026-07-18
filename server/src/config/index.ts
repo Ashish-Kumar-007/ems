@@ -20,7 +20,9 @@ export const config = {
   },
 
   cors: {
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+    clientUrls: process.env.CLIENT_URL 
+      ? process.env.CLIENT_URL.split(',').map(url => url.trim()) 
+      : ['http://localhost:3000'],
   },
 
   upload: {

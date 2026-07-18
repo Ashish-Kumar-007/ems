@@ -21,7 +21,13 @@ const app = express();
 
 // CORS
 app.use(cors({
-  origin: config.cors.clientUrl,
+  origin: function (origin, callback) {
+    if (!origin || config.cors.clientUrls.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
